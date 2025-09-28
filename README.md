@@ -1,6 +1,30 @@
 # ReliefOps - Disaster Relief Coordinator
 
-A React Native mobile app that showcases an autonomous disaster-response workflow using simulated Google ADK/A2A agents. Built for hackathon demos with a focus on functionality and design.
+A React Native mobile app that showcases an autonomous disaster-response workflow using Google ADK/A2A agents. Built for hackathon demos with a focus on functionality and design.
+
+[![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactnative.dev/)
+[![Google ADK](https://img.shields.io/badge/Google_ADK-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+
+## 🎯 Demo Video
+
+[Watch the 5-minute demo](https://your-demo-video-link.com) - See the complete disaster response workflow in action!
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/reliefops.git
+cd reliefops
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
+```
+
+**That's it!** The app works immediately with mock data. See [SETUP.md](SETUP.md) for detailed instructions.
 
 ## 🚀 Quick Start
 
