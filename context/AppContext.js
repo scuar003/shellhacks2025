@@ -2,10 +2,12 @@
 // This version connects to your Python ADK agents via HTTP
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { Platform } from 'react-native';
 import { colors } from '../theme/colors';
+import { getBridgeURL, BRIDGE_CONFIG } from '../integration/BridgeConfig';
 
-// ADK Bridge API endpoint
-const ADK_BRIDGE_URL = 'http://localhost:8001';
+// Get the appropriate bridge URL based on platform
+const ADK_BRIDGE_URL = getBridgeURL(Platform.OS);
 
 const AppContext = createContext();
 
@@ -136,24 +138,61 @@ export const AppProvider = ({ children }) => {
   // Initialize app and check bridge connection
   useEffect(() => {
     const initializeApp = async () => {
-      try {
-        // Check if ADK bridge is running
-        const response = await fetch(`${ADK_BRIDGE_URL}/`);
-        if (response.ok) {
-          dispatch({ 
-            type: 'SET_BRIDGE_STATUS', 
-            payload: { connected: true, error: null } 
+      let retries = BRIDGE_CONFIG.CONNECTION.retries;
+      let connected = false;
+      
+      while (retries > 0 && !connected) {
+        try {
+          if (BRIDGE_CONFIG.LOGGING.enabled) {
+            console.log(`🔍 Attempting to connect to ADK Bridge at ${ADK_BRIDGE_URL}... (${BRIDGE_CONFIG.CONNECTION.retries - retries + 1}/${BRIDGE_CONFIG.CONNECTION.retries})`);
+          }
+          
+          // Check if ADK bridge is running with timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), BRIDGE_CONFIG.CONNECTION.timeout);
+          
+          const response = await fetch(`${ADK_BRIDGE_URL}/`, {
+            method: 'GET',
+            signal: controller.signal,
+            headers: {
+              'Accept': 'application/json',
+            },
           });
-          console.log('✅ Connected to ADK Bridge');
-        } else {
-          throw new Error('Bridge not responding');
+          
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (BRIDGE_CONFIG.LOGGING.enabled) {
+              console.log('✅ Connected to ADK Bridge:', data);
+            }
+            dispatch({ 
+              type: 'SET_BRIDGE_STATUS', 
+              payload: { connected: true, error: null } 
+            });
+            connected = true;
+          } else {
+            throw new Error(`Bridge responded with status: ${response.status}`);
+          }
+        } catch (error) {
+          retries--;
+          if (BRIDGE_CONFIG.LOGGING.enabled) {
+            console.warn(`⚠️ ADK Bridge connection attempt failed (${BRIDGE_CONFIG.CONNECTION.retries - retries}/${BRIDGE_CONFIG.CONNECTION.retries}):`, error.message);
+          }
+          
+          if (retries === 0) {
+            if (BRIDGE_CONFIG.LOGGING.enabled) {
+              console.warn('❌ All ADK Bridge connection attempts failed, using mock data');
+            }
+            dispatch({ 
+              type: 'SET_BRIDGE_STATUS', 
+              payload: { connected: false, error: `Failed to connect: ${error.message}` } 
+            });
+          } else {
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, BRIDGE_CONFIG.CONNECTION.retryDelay));
+          }
         }
-      } catch (error) {
-        console.warn('⚠️ ADK Bridge not available, using mock data:', error.message);
-        dispatch({ 
-          type: 'SET_BRIDGE_STATUS', 
-          payload: { connected: false, error: error.message } 
-        });
       }
       
       dispatch({ type: 'INITIALIZE_APP' });
@@ -204,34 +243,164 @@ export const AppProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [state.autoRunEnabled, state.bridgeConnected]);
 
+  // Check bridge health
+  const checkBridgeHealth = async () => {
+    if (!BRIDGE_CONFIG.HEALTH_CHECK.enabled) return true;
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), BRIDGE_CONFIG.HEALTH_CHECK.timeout);
+      
+      const response = await fetch(`${ADK_BRIDGE_URL}/`, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (BRIDGE_CONFIG.LOGGING.enabled) {
+          console.log('🔍 Bridge health check passed:', data);
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      if (BRIDGE_CONFIG.LOGGING.enabled) {
+        console.warn('🔍 Bridge health check failed:', error.message);
+      }
+      return false;
+    }
+  };
+
+  // Test bridge API endpoint
+  const testBridgeAPI = async () => {
+    try {
+      console.log('🧪 Testing bridge API endpoint...');
+      
+      // Test a simple GET request first
+      const healthResponse = await fetch(`${ADK_BRIDGE_URL}/`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+      
+      if (!healthResponse.ok) {
+        throw new Error(`Health check failed: ${healthResponse.status}`);
+      }
+      
+      const healthData = await healthResponse.json();
+      console.log('✅ Bridge health check passed:', healthData);
+      
+      // Test the run-agents endpoint with correct format
+      const testFeeds = ['Official'];
+      
+      console.log('🧪 Testing run-agents endpoint...');
+      const testFormData = new FormData();
+      testFeeds.forEach(feed => {
+        testFormData.append('feeds', feed);
+      });
+      
+      const testResponse = await fetch(`${ADK_BRIDGE_URL}/api/run-agents`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: testFormData,
+      });
+      
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log('✅ Bridge API test passed:', testData);
+        return true;
+      } else {
+        const errorText = await testResponse.text();
+        console.warn('⚠️ Bridge API test failed:', testResponse.status, errorText);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Bridge API test error:', error.message);
+      return false;
+    }
+  };
+
   // Main function to run all agents via ADK bridge
   const runAllAgents = async () => {
-    if (!state.bridgeConnected) {
-      console.warn('ADK Bridge not connected, using mock execution');
+    // First check if bridge is still connected
+    const isHealthy = await checkBridgeHealth();
+    
+    if (!state.bridgeConnected || !isHealthy) {
+      console.warn('ADK Bridge not connected or unhealthy, using mock execution');
+      dispatch({ 
+        type: 'SET_BRIDGE_STATUS', 
+        payload: { connected: false, error: 'Bridge health check failed' } 
+      });
+      return runMockAgents();
+    }
+
+    // Test the API endpoint before running agents
+    const apiTestPassed = await testBridgeAPI();
+    if (!apiTestPassed) {
+      console.warn('Bridge API test failed, using mock execution with bridge status');
+      dispatch({ 
+        type: 'SET_BRIDGE_STATUS', 
+        payload: { connected: false, error: 'Bridge API endpoint not responding properly' } 
+      });
       return runMockAgents();
     }
 
     const startTime = Date.now();
     
     try {
+      console.log('🚀 Running agents via ADK Bridge...');
+      
       // Call ADK bridge to run agents
+      const feeds = state.selectedFeeds || ['Official'];
+      const region = state.currentRegion || 'Miami, FL';
+      
+      console.log('📤 Sending request to bridge with region & feeds:', region, feeds);
+      
+      // Bridge expects multipart/form-data with feeds array (and region)
+      const formData = new FormData();
+      formData.append('region', region);
+      feeds.forEach(feed => {
+        formData.append('feeds', feed);
+      });
+      
       const response = await fetch(`${ADK_BRIDGE_URL}/api/run-agents`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          region: state.currentRegion || 'Miami, FL',
-          feeds: state.selectedFeeds,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Bridge error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Bridge error response:', errorText);
+        throw new Error(`Bridge error ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
       console.log('✅ Agents executed via ADK Bridge:', result);
+
+      // If bridge returned real data, update state
+      if (result?.data) {
+        if (Array.isArray(result.data.shelters)) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'shelters', data: result.data.shelters } });
+        }
+        if (Array.isArray(result.data.closures)) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'closures', data: result.data.closures } });
+        }
+        if (Array.isArray(result.data.supplies)) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'supplies', data: result.data.supplies } });
+        }
+        if (Array.isArray(result.data.alerts)) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'alerts', data: result.data.alerts } });
+        }
+      }
 
       // Update agent statuses
       ['news', 'mapping', 'logistics'].forEach(agent => {
@@ -256,12 +425,20 @@ export const AppProvider = ({ children }) => {
         },
         merge: { status: 'done', duration: 300 },
         source: 'ADK Bridge',
+        region: result?.region || state.currentRegion || 'Unknown',
+        feeds: result?.feeds || feeds,
       };
       
       dispatch({ type: 'ADD_RUN', payload: run });
 
     } catch (error) {
-      console.error('Error running agents via bridge:', error);
+      console.error('❌ Error running agents via bridge:', error);
+      
+      // Update bridge status to disconnected
+      dispatch({ 
+        type: 'SET_BRIDGE_STATUS', 
+        payload: { connected: false, error: error.message } 
+      });
       
       // Fallback to mock execution
       runMockAgents();
@@ -271,6 +448,9 @@ export const AppProvider = ({ children }) => {
   // Fallback mock agent execution
   const runMockAgents = () => {
     const startTime = Date.now();
+    const isBridgeConnected = state.bridgeConnected;
+    
+    console.log(`🔄 Running agents in ${isBridgeConnected ? 'Bridge Fallback' : 'Mock'} mode...`);
     
     // Set all agents to running
     ['news', 'mapping', 'logistics'].forEach(agent => {
@@ -325,7 +505,7 @@ export const AppProvider = ({ children }) => {
           logistics: { status: 'done', duration: 1400 },
         },
         merge: { status: 'done', duration: 300 },
-        source: 'Mock',
+        source: isBridgeConnected ? 'Bridge Fallback' : 'Mock',
       };
       
       dispatch({ type: 'ADD_RUN', payload: run });

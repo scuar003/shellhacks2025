@@ -13,6 +13,7 @@ import { colors, spacing, borderRadius, shadows } from '../theme/colors';
 import { useApp } from '../context/AppContext';
 import KPICard from '../components/KPICard';
 import AgentCard from '../components/AgentCard';
+import BridgeStatus from '../components/BridgeStatus';
 
 const DashboardScreen = ({ navigation }) => {
   const { state, dispatch, runAllAgents } = useApp();
@@ -98,6 +99,30 @@ const DashboardScreen = ({ navigation }) => {
           </Text>
         </View>
       </View>
+
+      {/* Bridge Status */}
+      <BridgeStatus 
+        bridgeConnected={state.bridgeConnected}
+        bridgeError={state.bridgeError}
+        onRetry={async () => {
+          // Trigger a reconnection attempt
+          dispatch({ type: 'SET_BRIDGE_STATUS', payload: { connected: false, error: null } });
+          
+          // Test the bridge connection
+          try {
+            const response = await fetch('http://localhost:8001/');
+            if (response.ok) {
+              console.log('✅ Bridge reconnection successful');
+              dispatch({ type: 'SET_BRIDGE_STATUS', payload: { connected: true, error: null } });
+            } else {
+              throw new Error(`Bridge responded with status: ${response.status}`);
+            }
+          } catch (error) {
+            console.error('❌ Bridge reconnection failed:', error.message);
+            dispatch({ type: 'SET_BRIDGE_STATUS', payload: { connected: false, error: error.message } });
+          }
+        }}
+      />
 
       {/* KPI Cards */}
       <View style={styles.kpiSection}>
