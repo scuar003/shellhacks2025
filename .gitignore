@@ -137,3 +137,4 @@ config/api-keys.js
 # Google ADK API Key
 ADKConfig.js
 **/ADKConfig.js
+node_modules
