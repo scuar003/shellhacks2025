@@ -1,0 +1,42 @@
+[
+  {
+    "id": "sh1",
+    "name": "Civic Center",
+    "lat": 25.7811,
+    "lng": -80.2102,
+    "capacity": 300,
+    "occupied": 190,
+    "status": "Open",
+    "updated": "2025-09-27T16:10:00Z"
+  },
+  {
+    "id": "sh2",
+    "name": "Norland High",
+    "lat": 25.9489,
+    "lng": -80.2456,
+    "capacity": 250,
+    "occupied": 250,
+    "status": "Full",
+    "updated": "2025-09-27T16:05:00Z"
+  },
+  {
+    "id": "sh3",
+    "name": "Miami Beach Convention Center",
+    "lat": 25.7907,
+    "lng": -80.1300,
+    "capacity": 500,
+    "occupied": 320,
+    "status": "Open",
+    "updated": "2025-09-27T16:12:00Z"
+  },
+  {
+    "id": "sh4",
+    "name": "FIU Stadium",
+    "lat": 25.7569,
+    "lng": -80.3736,
+    "capacity": 400,
+    "occupied": 150,
+    "status": "Open",
+    "updated": "2025-09-27T16:08:00Z"
+  }
+]

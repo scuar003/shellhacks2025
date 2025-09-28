@@ -1,0 +1,37 @@
+[
+  {
+    "id": "al1",
+    "severity": "Critical",
+    "title": "New flood warning issued for Miami-Dade County",
+    "source": "Official",
+    "time": "2025-09-27T16:13:00Z"
+  },
+  {
+    "id": "al2",
+    "severity": "High",
+    "title": "Road closure extended on I-95 ramp due to debris",
+    "source": "Official",
+    "time": "2025-09-27T16:10:00Z"
+  },
+  {
+    "id": "al3",
+    "severity": "Moderate",
+    "title": "Shelter nearing capacity at Norland High School",
+    "source": "Crowd",
+    "time": "2025-09-27T16:09:00Z"
+  },
+  {
+    "id": "al4",
+    "severity": "High",
+    "title": "Power outage affecting 2,000+ residents in Coral Gables",
+    "source": "Official",
+    "time": "2025-09-27T16:07:00Z"
+  },
+  {
+    "id": "al5",
+    "severity": "Moderate",
+    "title": "Supply delivery delayed at Tropical Park due to road conditions",
+    "source": "Social",
+    "time": "2025-09-27T16:05:00Z"
+  }
+]

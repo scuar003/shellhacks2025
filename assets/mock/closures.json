@@ -1,0 +1,38 @@
+[
+  {
+    "id": "rc1",
+    "road": "US-1 @ 88th St",
+    "lat": 25.6932,
+    "lng": -80.3131,
+    "cause": "Flooded",
+    "eta": "Unknown",
+    "updated": "2025-09-27T16:12:00Z"
+  },
+  {
+    "id": "rc2",
+    "road": "I-95 N ramp",
+    "lat": 25.8215,
+    "lng": -80.1870,
+    "cause": "Debris",
+    "eta": "3h",
+    "updated": "2025-09-27T16:08:00Z"
+  },
+  {
+    "id": "rc3",
+    "road": "Biscayne Blvd @ 36th St",
+    "lat": 25.8134,
+    "lng": -80.1910,
+    "cause": "Power Lines Down",
+    "eta": "6h",
+    "updated": "2025-09-27T16:15:00Z"
+  },
+  {
+    "id": "rc4",
+    "road": "SW 8th St @ 107th Ave",
+    "lat": 25.7656,
+    "lng": -80.3046,
+    "cause": "Flooded",
+    "eta": "2h",
+    "updated": "2025-09-27T16:11:00Z"
+  }
+]

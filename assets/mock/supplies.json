@@ -1,0 +1,38 @@
+[
+  {
+    "id": "sp1",
+    "site": "Jose Marti Park",
+    "lat": 25.7656,
+    "lng": -80.2046,
+    "items": ["Water", "Food"],
+    "stock_pct": 70,
+    "updated": "2025-09-27T16:11:00Z"
+  },
+  {
+    "id": "sp2",
+    "site": "UM Arena",
+    "lat": 25.7198,
+    "lng": -80.2793,
+    "items": ["Blankets", "First Aid"],
+    "stock_pct": 45,
+    "updated": "2025-09-27T16:03:00Z"
+  },
+  {
+    "id": "sp3",
+    "site": "Bayfront Park",
+    "lat": 25.7751,
+    "lng": -80.1906,
+    "items": ["Water", "Blankets", "Food"],
+    "stock_pct": 85,
+    "updated": "2025-09-27T16:14:00Z"
+  },
+  {
+    "id": "sp4",
+    "site": "Tropical Park",
+    "lat": 25.7200,
+    "lng": -80.3100,
+    "items": ["First Aid", "Water"],
+    "stock_pct": 30,
+    "updated": "2025-09-27T16:09:00Z"
+  }
+]
