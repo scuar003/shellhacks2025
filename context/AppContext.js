@@ -35,6 +35,13 @@ const initialState = {
     shelters: true,
     closures: true,
     supplies: true,
+    infrastructure: true,
+    alerts: true,
+    evacuation_routes: true,
+    safe_routes: true,
+    hospitals: true,
+    emergency_services: true,
+    weather_stations: true,
   },
   
   // Monitoring state
@@ -201,12 +208,19 @@ export const AppProvider = ({ children }) => {
     initializeApp();
   }, []);
 
-  // Real-time data updates
+  // Real-time data updates - only update if no recent agent run
   useEffect(() => {
     if (!state.isMonitoring) return;
 
     const updateData = async () => {
       if (!state.bridgeConnected) return;
+      
+      // Don't update if we have recent data from agent runs (within last 2 minutes)
+      const lastRun = state.runs[0];
+      if (lastRun && (Date.now() - new Date(lastRun.timestamp).getTime()) < 120000) {
+        console.log('Skipping real-time update - recent agent data available');
+        return;
+      }
       
       try {
         // Fetch data from ADK bridge
@@ -217,20 +231,28 @@ export const AppProvider = ({ children }) => {
           fetch(`${ADK_BRIDGE_URL}/api/data/alerts`).then(r => r.json()),
         ]);
 
-        // Update data in state
-        dispatch({ type: 'UPDATE_DATA', payload: { type: 'shelters', data: shelters } });
-        dispatch({ type: 'UPDATE_DATA', payload: { type: 'closures', data: closures } });
-        dispatch({ type: 'UPDATE_DATA', payload: { type: 'supplies', data: supplies } });
-        dispatch({ type: 'UPDATE_DATA', payload: { type: 'alerts', data: alerts } });
+        // Only update if we have valid data
+        if (Array.isArray(shelters) && shelters.length > 0) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'shelters', data: shelters } });
+        }
+        if (Array.isArray(closures) && closures.length > 0) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'closures', data: closures } });
+        }
+        if (Array.isArray(supplies) && supplies.length > 0) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'supplies', data: supplies } });
+        }
+        if (Array.isArray(alerts) && alerts.length > 0) {
+          dispatch({ type: 'UPDATE_DATA', payload: { type: 'alerts', data: alerts } });
+        }
         
       } catch (error) {
         console.error('Error updating data from bridge:', error);
       }
     };
 
-    const interval = setInterval(updateData, 20000); // Every 20 seconds
+    const interval = setInterval(updateData, 30000); // Every 30 seconds (reduced frequency)
     return () => clearInterval(interval);
-  }, [state.isMonitoring, state.bridgeConnected]);
+  }, [state.isMonitoring, state.bridgeConnected, state.runs]);
 
   // Auto-run with ADK agents
   useEffect(() => {
@@ -388,17 +410,28 @@ export const AppProvider = ({ children }) => {
 
       // If bridge returned real data, update state
       if (result?.data) {
+        console.log('📊 Processing agent data:', {
+          shelters: result.data.shelters?.length || 0,
+          closures: result.data.closures?.length || 0,
+          supplies: result.data.supplies?.length || 0,
+          alerts: result.data.alerts?.length || 0,
+        });
+        
         if (Array.isArray(result.data.shelters)) {
           dispatch({ type: 'UPDATE_DATA', payload: { type: 'shelters', data: result.data.shelters } });
+          console.log('✅ Updated shelters:', result.data.shelters.length);
         }
         if (Array.isArray(result.data.closures)) {
           dispatch({ type: 'UPDATE_DATA', payload: { type: 'closures', data: result.data.closures } });
+          console.log('✅ Updated closures:', result.data.closures.length);
         }
         if (Array.isArray(result.data.supplies)) {
           dispatch({ type: 'UPDATE_DATA', payload: { type: 'supplies', data: result.data.supplies } });
+          console.log('✅ Updated supplies:', result.data.supplies.length);
         }
         if (Array.isArray(result.data.alerts)) {
           dispatch({ type: 'UPDATE_DATA', payload: { type: 'alerts', data: result.data.alerts } });
+          console.log('✅ Updated alerts:', result.data.alerts.length);
         }
       }
 

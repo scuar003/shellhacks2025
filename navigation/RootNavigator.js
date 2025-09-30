@@ -11,6 +11,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import MapScreen from '../screens/MapScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import RunsScreen from '../screens/RunsScreen';
+import SimulationScreen from '../screens/SimulationScreen';
 
 // Wizard screens
 import StepRegion from '../screens/Wizard/StepRegion';
@@ -35,6 +36,8 @@ const MainTabs = () => {
             iconName = focused ? 'notifications' : 'notifications-outline';
           } else if (route.name === 'Runs') {
             iconName = focused ? 'list' : 'list-outline';
+          } else if (route.name === 'Simulation') {
+            iconName = focused ? 'play-circle' : 'play-circle-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -84,6 +87,11 @@ const MainTabs = () => {
         name="Runs" 
         component={RunsScreen}
         options={{ title: 'Agent Runs' }}
+      />
+      <Tab.Screen 
+        name="Simulation" 
+        component={SimulationScreen}
+        options={{ title: 'Simulation' }}
       />
     </Tab.Navigator>
   );

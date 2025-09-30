@@ -54,10 +54,10 @@ const DashboardScreen = ({ navigation }) => {
 
   const handleRunNow = () => {
     runAllAgents();
-  };
+  }; 
 
   const getKPIValues = () => {
-    const activeShelters = state.shelters.filter(s => s.status === 'Open').length;
+    const activeShelters = state.shelters.filter(s => s && s.status && typeof s.status === 'string' && s.status.toLowerCase() === 'open').length;
     const roadClosures = state.closures.length;
     const supplySites = state.supplies.length;
     const newAlerts = state.newAlertsCount;
